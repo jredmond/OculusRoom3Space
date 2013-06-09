@@ -38,6 +38,11 @@ typedef struct {
 } stream_packet;
 #pragma pack(pop)
 
+//The device id
+TSS_Device_Id tss_device;
+
+
+
 
 //-------------------------------------------------------------------------------------
 // ***** OculusRoomTiny Class
@@ -92,17 +97,17 @@ int OculusRoomTinyApp::OnStartup(const char* args)
 
     
     // *** ThreeSpace initialisation
-    TSS_Device_Id tss_device;
     TSS_Error tss_error;
     TSS_ComPort tss_comport;
     stream_packet tss_packet;
-    unsigned int tss_timestamp;
 
     LARGE_INTEGER tss_frequency; //ticks per second
     LARGE_INTEGER tss_t1, tss_t2; //ticks
     QueryPerformanceFrequency(&tss_frequency);
     QueryPerformanceCounter(&tss_t1);
     QueryPerformanceCounter(&tss_t2);
+
+    unsigned int tss_serial;
 
     if(tss_getComPorts(&tss_comport,1,0,TSS_FIND_ALL_KNOWN^TSS_FIND_DNG))
     {
@@ -113,7 +118,9 @@ int OculusRoomTinyApp::OnStartup(const char* args)
         }
         else
         {
-            LogText("Connected to ThreeSpace sensor!!");
+            if(tss_getSerialNumber(tss_device, &tss_serial, NULL) == TSS_NO_ERROR)
+                LogText("Connected to ThreeSpace sensor!! Port: %s Serial: %x\n", 
+                    tss_comport.com_port, tss_serial);
         }
     }
     else
@@ -121,6 +128,20 @@ int OculusRoomTinyApp::OnStartup(const char* args)
         LogText("No sensors found\n");
     }
     // ***
+
+    // *** Get the quat for debug information
+
+    // ***
+
+    // *** Get the quat for debug information GetTSQuat()
+    TSS_Error tss_error_id;
+    float quat[4];
+    unsigned int tss_timestamp;
+    //LogText("Device string is " + tss_device);
+    tss_error_id = tss_getTaredOrientationAsQuaternion(tss_device, quat, &tss_timestamp);
+    LogText("Quaternion: %f, %f, %f, %f Timestamp=%u\n", quat[0], quat[1], quat[2] ,quat[3], tss_timestamp);
+    // *** 
+
     
 
 
