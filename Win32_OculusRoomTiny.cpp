@@ -142,7 +142,7 @@ int OculusRoomTinyApp::OnStartup(const char* args)
     }
     else
     {
-        LogText("TSS: Set axi failed!\n");
+        LogText("TSS: Set axis failed!\n");
     }
     // ***
 
