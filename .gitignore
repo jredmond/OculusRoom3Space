@@ -1,0 +1,9 @@
+Release/
+*.rc
+*.sdf
+*.vcxproj*
+*.opensdf
+*.mm
+OSX_*
+RenderTiny_*
+OculusRoomModel.cpp
