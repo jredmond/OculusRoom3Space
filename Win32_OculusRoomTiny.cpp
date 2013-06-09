@@ -71,10 +71,39 @@ OculusRoomTinyApp::~OculusRoomTinyApp()
     pApp = 0;
 }
 
-
 int OculusRoomTinyApp::OnStartup(const char* args)
 {
     OVR_UNUSED(args);
+
+    
+    // *** ThreeSpace initialisation
+    TSS_Device_Id tss_device;
+    TSS_Error tss_error;
+    TSS_ComPort tss_comport;
+    stream_packet tss_packet;
+    unsigned int tss_timestamp;
+
+    LARGE_INTEGER tss_frequency; //ticks per second
+    LARGE_INTEGER tss_t1, tss_t2; //ticks
+    QueryPerformanceFrequency(&tss_frequency);
+    QueryPerformanceCounter(&tss_t1);
+    QueryPerformanceCounter(&tss_t2);
+
+    if(tss_getComPorts(&tss_comport,1,0,TSS_FIND_ALL_KNOWN^TSS_FIND_DNG))
+    {
+        tss_device = tss_createTSDeviceStr(tss_comport.com_port, TSS_TIMESTAMP_SENSOR);
+        if(tss_device == TSS_NO_DEVICE_ID)
+        {
+            LogText("Failed to create a sensor on %s\n", tss_comport.com_port);
+        }
+    }
+    else
+    {
+        LogText("No sensors found\n");
+    }
+    LogText("woopwoop\n");
+    // ***
+    
 
 
     // *** Oculus HMD & Sensor Initialization
@@ -154,7 +183,6 @@ int OculusRoomTinyApp::OnStartup(const char* args)
 
     } while (detectionResult != IDCONTINUE);
 
-    
     if (HMDInfo.HResolution > 0)
     {
         Width  = HMDInfo.HResolution;

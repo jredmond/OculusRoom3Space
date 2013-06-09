@@ -8,3 +8,5 @@ OSX_*
 RenderTiny_*
 OculusRoomModel.cpp
 ThreeSpaceAPI/
+*.sln
+*.suo

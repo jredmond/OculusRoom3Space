@@ -31,9 +31,21 @@ limitations under the License.
 #include "../../LibOVR/Src/Kernel/OVR_Timer.h"
 #include "RenderTiny_D3D1X_Device.h"
 
+//ThreeSpace
+//header file
+#include "ThreeSpaceAPI/yei_threespace_api.h"
+
 using namespace OVR;
 using namespace OVR::RenderTiny;
 
+//ThreeSpace
+//When getting stream data use a packed structure
+#pragma pack(push,1)
+typedef struct {
+    float quat[4];
+    float accel[3];
+} stream_packet;
+#pragma pack(pop)
 
 //-------------------------------------------------------------------------------------
 // ***** OculusRoomTiny Description
