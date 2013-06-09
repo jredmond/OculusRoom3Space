@@ -137,13 +137,9 @@ int OculusRoomTinyApp::OnStartup(const char* args)
     char neg_z = 0;
     unsigned char axis_dir_byte = tss_generateAxisDirections(axis_order, neg_x, neg_y, neg_z);
     if( tss_setAxisDirections(tss_device, axis_dir_byte, &tss_timestamp) == 0 )
-    {
         LogText("TSS: Set axis complete!\n");
-    }
     else
-    {
         LogText("TSS: Set axis failed!\n");
-    }
     // ***
 
     // *** Get the quat for debug information GetTSQuat()
