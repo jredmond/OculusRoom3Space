@@ -100,6 +100,7 @@ int OculusRoomTinyApp::OnStartup(const char* args)
     TSS_Error tss_error;
     TSS_ComPort tss_comport;
     stream_packet tss_packet;
+    unsigned int tss_timestamp;
 
     LARGE_INTEGER tss_frequency; //ticks per second
     LARGE_INTEGER tss_t1, tss_t2; //ticks
@@ -129,15 +130,25 @@ int OculusRoomTinyApp::OnStartup(const char* args)
     }
     // ***
 
-    // *** Get the quat for debug information
-
+    // *** Set ThreeSpace axis directions SetTSAxisDirections()
+    TSS_Axis_Direction axis_order = TSS_YXZ;
+    char neg_x = 1;
+    char neg_y = 0;
+    char neg_z = 0;
+    unsigned char axis_dir_byte = tss_generateAxisDirections(axis_order, neg_x, neg_y, neg_z);
+    if( tss_setAxisDirections(tss_device, axis_dir_byte, &tss_timestamp) == 0 )
+    {
+        LogText("TSS: Set axis complete!\n");
+    }
+    else
+    {
+        LogText("TSS: Set axi failed!\n");
+    }
     // ***
 
     // *** Get the quat for debug information GetTSQuat()
     TSS_Error tss_error_id;
     float quat[4];
-    unsigned int tss_timestamp;
-    //LogText("Device string is " + tss_device);
     tss_error_id = tss_getTaredOrientationAsQuaternion(tss_device, quat, &tss_timestamp);
     LogText("Quaternion: %f, %f, %f, %f Timestamp=%u\n", quat[0], quat[1], quat[2] ,quat[3], tss_timestamp);
     // *** 
