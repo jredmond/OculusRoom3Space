@@ -25,6 +25,21 @@ limitations under the License.
 #include "RenderTiny_D3D1X_Device.h"
 
 //-------------------------------------------------------------------------------------
+
+//ThreeSpace Stuff
+//header file
+#include "ThreeSpaceAPI/yei_threespace_api.h"
+
+//When getting stream data use a packed structure
+#pragma pack(push,1)
+typedef struct {
+    float quat[4];
+    float accel[3];
+} stream_packet;
+#pragma pack(pop)
+
+
+//-------------------------------------------------------------------------------------
 // ***** OculusRoomTiny Class
 
 // Static pApp simplifies routing the window function.
@@ -96,12 +111,15 @@ int OculusRoomTinyApp::OnStartup(const char* args)
         {
             LogText("Failed to create a sensor on %s\n", tss_comport.com_port);
         }
+        else
+        {
+            LogText("Connected to ThreeSpace sensor!!");
+        }
     }
     else
     {
         LogText("No sensors found\n");
     }
-    LogText("woopwoop\n");
     // ***
     
 
