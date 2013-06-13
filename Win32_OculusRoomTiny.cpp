@@ -149,7 +149,23 @@ int OculusRoomTinyApp::OnStartup(const char* args)
     LogText("Quaternion: %f, %f, %f, %f Timestamp=%u\n", quat[0], quat[1], quat[2] ,quat[3], tss_timestamp);
     // *** 
 
-    
+    // *** Get the colour of the headtrackers LED
+    LogText("Getting the LED colour of the device\n");
+    float tss_color[3];
+    tss_error_id = tss_getLEDColor(tss_device, tss_color, NULL);
+    LogText("Color: %f, %f, %f\n", tss_color[0], tss_color[1], tss_color[2]);
+
+    //Try setting the colour
+    for(int i = 0; i <= 100; i++)
+    {
+        tss_color[i%3] = (float)i/100;
+        tss_color[(i+1)%3] = 0;
+        tss_color[(i+2)%3] = 0;
+        tss_error_id = tss_setLEDColor(tss_device, tss_color, NULL);
+        Sleep(100);
+    }
+
+    // **
 
 
     // *** Oculus HMD & Sensor Initialization
