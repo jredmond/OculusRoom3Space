@@ -165,8 +165,63 @@ int OculusRoomTinyApp::OnStartup(const char* args)
         Sleep(100);
     }
 
-    // **
+    // ***
 
+    // *** StartStreaming
+    bool tss_isStreaming = false;
+    TSS_Stream_Command tss_stream_slots[8] = { TSS_GET_TARED_ORIENTATION_AS_QUATERNION, TSS_NULL,
+                                               TSS_NULL, TSS_NULL,
+                                               TSS_NULL, TSS_NULL,
+                                               TSS_NULL, TSS_NULL};
+
+    int count = 0;
+    if(!tss_isStreaming)
+    {
+        //3 Attempts
+        while( count < 3)
+        {
+            if(tss_setStreamingTiming(tss_device,0, TSS_INFINITE_DURATION, 0, NULL) == 0)
+            {
+                if(tss_setStreamingSlots(tss_device, tss_stream_slots, NULL) == 0)
+                {
+                    if(tss_startStreaming(tss_device, NULL) == 0)
+                    {
+                        tss_isStreaming =  true;
+                        LogText("TSS: Start streaming success!\n");
+                        break;
+                    }
+                }
+            }
+            count++;
+        }
+    }
+    if(!tss_isStreaming)
+    {
+        LogText("TSS: Start streaming failed!\n");
+    }
+    // ***
+
+    // *** StopStreaming
+    count = 0;
+    if(tss_isStreaming)
+    {
+        //3 Attempts
+        while( count < 3)
+        {
+            if(tss_stopStreaming(tss_device, NULL) == 0)
+            {
+                tss_isStreaming =  false;
+                LogText("TSS: Stop streaming success!\n");
+                break;
+            }
+            count++;
+        }
+    }
+    if(tss_isStreaming)
+    {
+        LogText("TSS: Stop streaming failed!\n");
+    }
+    // ***
 
     // *** Oculus HMD & Sensor Initialization
 
