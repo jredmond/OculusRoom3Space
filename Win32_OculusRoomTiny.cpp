@@ -201,6 +201,23 @@ int OculusRoomTinyApp::OnStartup(const char* args)
     }
     // ***
 
+    // *** tareSensor
+    tss_tareWithCurrentOrientation(tss_device,NULL);
+    /*
+    float forward[3];
+    float down[3];
+    float filt_orient_quat[4];
+    float gravity[3];
+    gravity[0] = 0;
+    gravity[1] = 0;
+    gravity[2] = -1;
+
+    tss_getUntaredTwoVectorInSensorFrame(tss_device, forward, down);
+    tss_getUntaredOrientationAsQuaternion(tss_device, filt_orient_quat);
+    */
+
+    // ***
+
     /*
     // *** GetData
     tss_getLatestStreamData(tss_device,(char*)&tss_packet,sizeof(tss_packet),1000,&tss_timestamp);
@@ -527,7 +544,7 @@ void OculusRoomTinyApp::OnIdle()
     // Gamepad rotation.
     EyeYaw -= GamepadRotate.x * dt;
 
-    if (!pSensor)
+    if (!pSensor && !tss_isStreaming)
     {
         // Allow gamepad to look up/down, but only if there is no Rift sensor.
         EyePitch -= GamepadRotate.y * dt;
