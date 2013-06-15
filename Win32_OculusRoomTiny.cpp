@@ -33,7 +33,7 @@ limitations under the License.
 //When getting stream data use a packed structure
 #pragma pack(push,1)
 typedef struct {
-    float euler[3];
+    float quat[4];
 } tss_stream_packet;
 #pragma pack(pop)
 
@@ -131,9 +131,9 @@ int OculusRoomTinyApp::OnStartup(const char* args)
     // ***
 
     // *** Set ThreeSpace axis directions SetTSAxisDirections()
-    TSS_Axis_Direction axis_order = TSS_ZXY;
-    char neg_x = 0;
-    char neg_y = 0;
+    TSS_Axis_Direction axis_order = TSS_XZY;
+    char neg_x = 1;
+    char neg_y = 1;
     char neg_z = 0;
     unsigned char axis_dir_byte = tss_generateAxisDirections(axis_order, neg_x, neg_y, neg_z);
     if( tss_setAxisDirections(tss_device, axis_dir_byte, &tss_timestamp) == 0 )
@@ -169,7 +169,7 @@ int OculusRoomTinyApp::OnStartup(const char* args)
     */
 
     // *** StartStreaming
-    TSS_Stream_Command tss_stream_slots[8] = { TSS_GET_TARED_ORIENTATION_AS_EULER_ANGLES, TSS_NULL,
+    TSS_Stream_Command tss_stream_slots[8] = { TSS_GET_TARED_ORIENTATION_AS_QUATERNION, TSS_NULL,
                                                TSS_NULL, TSS_NULL,
                                                TSS_NULL, TSS_NULL,
                                                TSS_NULL, TSS_NULL};
@@ -529,7 +529,57 @@ void OculusRoomTinyApp::OnIdle()
     //Threespace sensor integration
     if(tss_isStreaming)
     {
-        tss_getLatestStreamData(tss_device,(char*)&tss_packet,sizeof(tss_packet),1000,&tss_timestamp);
+        int error = tss_getLatestStreamData(tss_device,(char*)&tss_packet,sizeof(tss_packet),1000,&tss_timestamp);
+        if(error != 0)
+        {
+            LogText("TSS: getLatestStreamData error\n");
+        }
+
+        const float PI_F = 3.14159265358979f;
+
+        float x, y, z, w, s;
+        float rotator[3];
+
+        x = tss_packet.quat[0];
+        y = tss_packet.quat[1];
+        z = tss_packet.quat[2];
+        w = tss_packet.quat[3];
+        s = 2.0f * (w * y - x * z);
+
+        //it is invalid to pass values outside of the range -1,1 to asin()
+        if( s < 1.0 )
+        {
+            if( -1.0 < s)
+            {
+                rotator[0] = atan2( 2.0f*(x*y+w*z), 1.0f-2.0f*(y*y+z*z) );
+                rotator[1] = asin( s );
+                rotator[2] = atan2( 2.0f*(y*z+w*x), 1.0f-2.0f*(x*x+y*y) ); 
+            }
+            else
+            {
+                rotator[0] = 0;
+                rotator[1] = -PI_F / 2;
+                rotator[2] = -atan2( 2.0f*(x*y-w*z), 1.0f-2.0f*(x*x+z*z) );
+            }
+        }
+        else
+        {
+            rotator[0] = 0;
+            rotator[1] = PI_F / 2;
+            rotator[2] = atan2( 2.0f*(x*y-w*z), 1.0f-2.0f*(x*x+z*z) );
+        }
+
+        float yaw = 0.0;
+        yaw = rotator[0];
+        EyePitch = rotator[1];
+        EyeRoll = rotator[2];
+
+        //we are allowing combination of gamepad yaw and headtracker yaw therefore
+        EyeYaw += (yaw - LastSensorYaw);
+        LastSensorYaw = yaw;
+
+
+        /*
         float yaw = 0.0f;
 
         yaw = tss_packet.euler[0];
@@ -539,6 +589,7 @@ void OculusRoomTinyApp::OnIdle()
         //we are allowing combination of gamepad yaw and headtracker yaw therefore
         EyeYaw += (yaw - LastSensorYaw);
         LastSensorYaw = yaw;
+        */
     }
 
     // Gamepad rotation.
