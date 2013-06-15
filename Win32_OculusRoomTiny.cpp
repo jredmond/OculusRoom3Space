@@ -33,13 +33,15 @@ limitations under the License.
 //When getting stream data use a packed structure
 #pragma pack(push,1)
 typedef struct {
-    float quat[4];
-    float accel[3];
-} stream_packet;
+    float euler[3];
+} tss_stream_packet;
 #pragma pack(pop)
 
 //The device id
 TSS_Device_Id tss_device;
+bool tss_isStreaming = false;
+tss_stream_packet tss_packet;
+unsigned int tss_timestamp;
 
 
 
@@ -97,10 +99,8 @@ int OculusRoomTinyApp::OnStartup(const char* args)
 
     
     // *** ThreeSpace initialisation
-    TSS_Error tss_error;
+    //TSS_Error tss_error;
     TSS_ComPort tss_comport;
-    stream_packet tss_packet;
-    unsigned int tss_timestamp;
 
     LARGE_INTEGER tss_frequency; //ticks per second
     LARGE_INTEGER tss_t1, tss_t2; //ticks
@@ -131,8 +131,8 @@ int OculusRoomTinyApp::OnStartup(const char* args)
     // ***
 
     // *** Set ThreeSpace axis directions SetTSAxisDirections()
-    TSS_Axis_Direction axis_order = TSS_YXZ;
-    char neg_x = 1;
+    TSS_Axis_Direction axis_order = TSS_ZXY;
+    char neg_x = 0;
     char neg_y = 0;
     char neg_z = 0;
     unsigned char axis_dir_byte = tss_generateAxisDirections(axis_order, neg_x, neg_y, neg_z);
@@ -142,6 +142,7 @@ int OculusRoomTinyApp::OnStartup(const char* args)
         LogText("TSS: Set axis failed!\n");
     // ***
 
+    /*
     // *** Get the quat for debug information GetTSQuat()
     TSS_Error tss_error_id;
     float quat[4];
@@ -164,12 +165,11 @@ int OculusRoomTinyApp::OnStartup(const char* args)
         tss_error_id = tss_setLEDColor(tss_device, tss_color, NULL);
         Sleep(100);
     }
-
     // ***
+    */
 
     // *** StartStreaming
-    bool tss_isStreaming = false;
-    TSS_Stream_Command tss_stream_slots[8] = { TSS_GET_TARED_ORIENTATION_AS_QUATERNION, TSS_NULL,
+    TSS_Stream_Command tss_stream_slots[8] = { TSS_GET_TARED_ORIENTATION_AS_EULER_ANGLES, TSS_NULL,
                                                TSS_NULL, TSS_NULL,
                                                TSS_NULL, TSS_NULL,
                                                TSS_NULL, TSS_NULL};
@@ -201,27 +201,15 @@ int OculusRoomTinyApp::OnStartup(const char* args)
     }
     // ***
 
-    // *** StopStreaming
-    count = 0;
-    if(tss_isStreaming)
-    {
-        //3 Attempts
-        while( count < 3)
-        {
-            if(tss_stopStreaming(tss_device, NULL) == 0)
-            {
-                tss_isStreaming =  false;
-                LogText("TSS: Stop streaming success!\n");
-                break;
-            }
-            count++;
-        }
-    }
-    if(tss_isStreaming)
-    {
-        LogText("TSS: Stop streaming failed!\n");
-    }
+    /*
+    // *** GetData
+    tss_getLatestStreamData(tss_device,(char*)&tss_packet,sizeof(tss_packet),1000,&tss_timestamp);
+    LogText("t:%8u Euler: %f, %f, %f, \n", tss_timestamp,
+                                           tss_packet.euler[0], 
+                                           tss_packet.euler[1],
+                                           tss_packet.euler[2]);
     // ***
+    */
 
     // *** Oculus HMD & Sensor Initialization
 
@@ -521,6 +509,20 @@ void OculusRoomTinyApp::OnIdle()
         LastSensorYaw = yaw;    
     }    
 
+    //Threespace sensor integration
+    if(tss_isStreaming)
+    {
+        tss_getLatestStreamData(tss_device,(char*)&tss_packet,sizeof(tss_packet),1000,&tss_timestamp);
+        float yaw = 0.0f;
+
+        yaw = tss_packet.euler[0];
+        EyePitch = tss_packet.euler[1];
+        EyeRoll = tss_packet.euler[2];
+
+        //we are allowing combination of gamepad yaw and headtracker yaw therefore
+        EyeYaw += (yaw - LastSensorYaw);
+        LastSensorYaw = yaw;
+    }
 
     // Gamepad rotation.
     EyeYaw -= GamepadRotate.x * dt;
@@ -848,6 +850,29 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE, LPSTR inArgs, int)
             exitCode = app.Run();
         }
     }
+
+
+    // *** StopStreaming
+    int count = 0;
+    if(tss_isStreaming)
+    {
+        //3 Attempts
+        while( count < 3)
+        {
+            if(tss_stopStreaming(tss_device, NULL) == 0)
+            {
+                tss_isStreaming =  false;
+                LogText("TSS: Stop streaming success!\n");
+                break;
+            }
+            count++;
+        }
+    }
+    if(tss_isStreaming)
+    {
+        LogText("TSS: Stop streaming failed!\n");
+    }
+    // ***
 
     // No OVR functions involving memory are allowed after this.
     OVR::System::Destroy();
